@@ -1,0 +1,22 @@
+{
+  "proxy": {
+    "port": 8080,
+    "host": "0.0.0.0"
+  },
+  "certificate": {
+    "auto_generate": true,
+    "organization": "Proxy Server",
+    "common_name": "localhost",
+    "valid_days": 365,
+    "cert_path": "certs/proxy-cert.pem",
+    "key_path": "certs/proxy-key.pem"
+  },
+  "logging": {
+    "session_dir": "sessions",
+    "log_requests": true,
+    "log_responses": true,
+    "log_headers": true,
+    "log_body": true,
+    "max_body_size": 1048576
+  }
+}
