@@ -81,7 +81,7 @@ func (r *ResponseModifier) ModifyResponse(res *http.Response) error {
 	return r.Logger.LogResponse(res, reqID)
 }
 
-func NewProxyServer(option ...ProxyOption) *martian.Proxy {
+func NewProxyServer(option ...ProxyOption) (*martian.Proxy, *logger.SessionLogger) {
 	proxyOpts := &Proxy{
 		Port:         8080,
 		Host:         "0.0.0.0",
@@ -145,5 +145,5 @@ func NewProxyServer(option ...ProxyOption) *martian.Proxy {
 	p.SetRequestModifier(fg)
 	p.SetResponseModifier(fg)
 
-	return p
+	return p, sl
 }

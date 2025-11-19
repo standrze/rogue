@@ -28,10 +28,11 @@ func TestNewProxyServer(t *testing.T) {
 	sessionDir := filepath.Join(tmpDir, "logs")
 
 	// Create proxy
-	proxy := NewProxyServer(
+	proxy, sl := NewProxyServer(
 		WithCert(certPath, keyPath),
 		WithSessionDir(sessionDir),
 	)
+	defer sl.Close()
 
 	// Start proxy listener
 	l, err := net.Listen("tcp", "127.0.0.1:0")
@@ -78,6 +79,9 @@ func TestNewProxyServer(t *testing.T) {
 	if len(sessions) == 0 {
 		t.Error("No session logs found")
 	}
+
+	// Close logger to ensure all data is flushed
+	sl.Close()
 
 	// Test Export to Markdown
 	if len(sessions) > 0 {

@@ -21,3 +21,5 @@ go.work
 logs/
 certs/
 rogue.exe
+tools/traffic_gen/
+sessions/

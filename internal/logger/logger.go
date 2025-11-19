@@ -37,6 +37,7 @@ type SessionLogger struct {
 	logBody     bool
 	maxBodySize int
 	encoder     *json.Encoder
+	firstEntry  bool
 }
 
 func NewSessionLogger(sessionDir string, logHeaders, logBody bool, maxBodySize int) (*SessionLogger, error) {
@@ -52,6 +53,12 @@ func NewSessionLogger(sessionDir string, logHeaders, logBody bool, maxBodySize i
 		return nil, err
 	}
 
+	// Start the JSON array
+	if _, err := file.WriteString("[\n"); err != nil {
+		file.Close()
+		return nil, err
+	}
+
 	sl := &SessionLogger{
 		sessionFile: file,
 		sessionName: sessionName,
@@ -60,6 +67,7 @@ func NewSessionLogger(sessionDir string, logHeaders, logBody bool, maxBodySize i
 		logBody:     logBody,
 		maxBodySize: maxBodySize,
 		encoder:     json.NewEncoder(file),
+		firstEntry:  true,
 	}
 
 	sl.encoder.SetIndent("", "  ")
@@ -96,7 +104,14 @@ func (sl *SessionLogger) LogRequest(req *http.Request, requestID string) error {
 		}
 	}
 
-	return sl.encoder.Encode(map[string]interface{}{
+	if !sl.firstEntry {
+		if _, err := sl.sessionFile.WriteString(",\n"); err != nil {
+			return err
+		}
+	}
+	sl.firstEntry = false
+
+	return sl.encoder.Encode(map[string]any{
 		"type": "request",
 		"data": reqLog,
 	})
@@ -130,6 +145,13 @@ func (sl *SessionLogger) LogResponse(resp *http.Response, requestID string) erro
 		}
 	}
 
+	if !sl.firstEntry {
+		if _, err := sl.sessionFile.WriteString(",\n"); err != nil {
+			return err
+		}
+	}
+	sl.firstEntry = false
+
 	return sl.encoder.Encode(map[string]any{
 		"type": "response",
 		"data": respLog,
@@ -137,6 +159,11 @@ func (sl *SessionLogger) LogResponse(resp *http.Response, requestID string) erro
 }
 
 func (sl *SessionLogger) Close() error {
+	// End the JSON array
+	if _, err := sl.sessionFile.WriteString("\n]"); err != nil {
+		sl.sessionFile.Close()
+		return err
+	}
 	return sl.sessionFile.Close()
 }
 
@@ -174,25 +201,35 @@ func ExportSessionToMarkdown(sessionDir, sessionName, outputPath string) error {
 		return err
 	}
 
-	decoder := json.NewDecoder(bytes.NewReader(data))
+	var entries []map[string]any
+	trimmedData := bytes.TrimSpace(data)
+	if len(trimmedData) > 0 && trimmedData[0] == '[' {
+		if err := json.Unmarshal(data, &entries); err != nil {
+			return err
+		}
+	} else {
+		decoder := json.NewDecoder(bytes.NewReader(data))
+		for {
+			var entry map[string]any
+			if err := decoder.Decode(&entry); err == io.EOF {
+				break
+			} else if err != nil {
+				return err
+			}
+			entries = append(entries, entry)
+		}
+	}
 
 	var markdown strings.Builder
 	markdown.WriteString(fmt.Sprintf("# Session Log: %s\n\n", sessionName))
 
-	for {
-		var entry map[string]interface{}
-		if err := decoder.Decode(&entry); err == io.EOF {
-			break
-		} else if err != nil {
-			return err
-		}
-
+	for _, entry := range entries {
 		typeStr, ok := entry["type"].(string)
 		if !ok {
 			continue
 		}
 
-		dataMap, ok := entry["data"].(map[string]interface{})
+		dataMap, ok := entry["data"].(map[string]any)
 		if !ok {
 			continue
 		}

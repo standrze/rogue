@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/charmbracelet/fang"
 	"github.com/spf13/cobra"
@@ -68,7 +70,7 @@ var startCmd = &cobra.Command{
 
 		fmt.Printf("Starting Rogue on %s:%d\n", cfg.Proxy.Host, cfg.Proxy.Port)
 
-		p := proxy.NewProxyServer(
+		p, sl := proxy.NewProxyServer(
 			proxy.WithPort(cfg.Proxy.Port),
 			proxy.WithHost(cfg.Proxy.Host),
 			proxy.WithCert(cfg.Certificate.CertPath, cfg.Certificate.KeyPath),
@@ -81,13 +83,31 @@ var startCmd = &cobra.Command{
 				cfg.Logging.MaxBodySize,
 			),
 		)
+		defer sl.Close()
 
 		l, err := net.Listen("tcp", fmt.Sprintf("%s:%d", cfg.Proxy.Host, cfg.Proxy.Port))
 		if err != nil {
 			return err
 		}
 
-		return p.Serve(l)
+		// Create a channel to listen for OS signals
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+		// Create a channel to listen for server errors
+		errChan := make(chan error, 1)
+		go func() {
+			errChan <- p.Serve(l)
+		}()
+
+		// Block until a signal is received or the server returns an error
+		select {
+		case <-sigChan:
+			fmt.Println("\nReceived shutdown signal, closing session...")
+			return nil
+		case err := <-errChan:
+			return err
+		}
 	},
 }
 
