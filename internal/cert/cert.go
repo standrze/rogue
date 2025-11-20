@@ -80,7 +80,7 @@ func Exists(certPath, keyPath string) bool {
 	return certErr == nil && keyErr == nil
 }
 
-func Load(certPath, keyPath string) (*x509.Certificate, interface{}, error) {
+func Load(certPath, keyPath string) (*x509.Certificate, any, error) {
 	certPEM, err := os.ReadFile(certPath)
 	if err != nil {
 		return nil, nil, err

@@ -95,10 +95,7 @@ func (sl *SessionLogger) LogRequest(req *http.Request, requestID string) error {
 	if sl.logBody && req.Body != nil {
 		bodyBytes, err := io.ReadAll(req.Body)
 		if err == nil {
-			logSize := len(bodyBytes)
-			if logSize > sl.maxBodySize {
-				logSize = sl.maxBodySize
-			}
+			logSize := min(len(bodyBytes), sl.maxBodySize)
 			reqLog.Body = string(bodyBytes[:logSize])
 			req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 		}
@@ -136,10 +133,7 @@ func (sl *SessionLogger) LogResponse(resp *http.Response, requestID string) erro
 	if sl.logBody && resp.Body != nil {
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err == nil {
-			logSize := len(bodyBytes)
-			if logSize > sl.maxBodySize {
-				logSize = sl.maxBodySize
-			}
+			logSize := min(len(bodyBytes), sl.maxBodySize)
 			respLog.Body = string(bodyBytes[:logSize])
 			resp.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 		}
