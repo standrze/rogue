@@ -166,4 +166,7 @@ func init() {
 
 	viper.BindPFlag("proxy.port", startCmd.Flags().Lookup("port"))
 	viper.BindPFlag("proxy.host", startCmd.Flags().Lookup("host"))
+
+	startCmd.Flags().Int("max-body-size", 1024*1024, "Maximum size of request/response body to log in bytes")
+	viper.BindPFlag("logging.max_body_size", startCmd.Flags().Lookup("max-body-size"))
 }
