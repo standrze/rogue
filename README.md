@@ -1,4 +1,16 @@
-# Rogue - High-Performance HTTP/HTTPS Proxy
+<div align="center">
+  <img src="logo.png" alt="Rogue Logo" width="200" />
+  <h1>Rogue</h1>
+  <p>
+    <strong>High-Performance HTTP/HTTPS Proxy</strong>
+  </p>
+  <p>
+    <a href="https://go.dev/"><img src="https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat-square&logo=go" alt="Go Version" /></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License" /></a>
+  </p>
+</div>
+
+<br />
 
 Rogue is a versatile, high-performance HTTP/HTTPS proxy server designed for deep traffic inspection and modification. Built with Go, it features automatic certificate generation for Man-in-the-Middle (MITM) capabilities, comprehensive request/response logging, and a flexible configuration system. It is ideal for debugging, security testing, and traffic analysis.
 

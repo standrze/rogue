@@ -9,14 +9,12 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 
 	"github.com/charmbracelet/fang"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/standrze/rogue/internal/config"
-	"github.com/standrze/rogue/internal/logger"
 	"github.com/standrze/rogue/internal/proxy"
 )
 
@@ -113,39 +111,10 @@ var startCmd = &cobra.Command{
 	},
 }
 
-var exportCmd = &cobra.Command{
-	Use:   "export [session_name] [output_path]",
-	Short: "Export a session log to Markdown",
-	Args:  cobra.RangeArgs(1, 2),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		viper.SetConfigName("config")
-		viper.SetConfigType("json")
-		viper.AddConfigPath(".")
-		viper.ReadInConfig()
-		viper.SetDefault("logging.session_dir", "logs")
-
-		sessionDir := viper.GetString("logging.session_dir")
-		sessionName := args[0]
-
-		if filepath.Ext(sessionName) == "" {
-			sessionName += ".json"
-		}
-
-		outputPath := sessionName + ".md"
-		if len(args) > 1 {
-			outputPath = args[1]
-		}
-
-		fmt.Printf("Exporting session %s to %s...\n", sessionName, outputPath)
-		return logger.ExportSessionToMarkdown(sessionDir, sessionName, outputPath)
-	},
-}
-
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.ma=in(). It only needs to happen once to the rootCmd.
 func Execute() {
 	rootCmd.AddCommand(startCmd)
-	rootCmd.AddCommand(exportCmd)
 	if err := fang.Execute(context.Background(), rootCmd); err != nil {
 		os.Exit(1)
 	}
@@ -166,7 +135,4 @@ func init() {
 
 	viper.BindPFlag("proxy.port", startCmd.Flags().Lookup("port"))
 	viper.BindPFlag("proxy.host", startCmd.Flags().Lookup("host"))
-
-	startCmd.Flags().Int("max-body-size", 1024*1024, "Maximum size of request/response body to log in bytes")
-	viper.BindPFlag("logging.max_body_size", startCmd.Flags().Lookup("max-body-size"))
 }

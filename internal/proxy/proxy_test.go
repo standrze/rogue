@@ -82,17 +82,4 @@ func TestNewProxyServer(t *testing.T) {
 
 	// Close logger to ensure all data is flushed
 	sl.Close()
-
-	// Test Export to Markdown
-	if len(sessions) > 0 {
-		sessionName := sessions[0]
-		mdPath := filepath.Join(tmpDir, "session.md")
-		err := logger.ExportSessionToMarkdown(sessionDir, sessionName, mdPath)
-		if err != nil {
-			t.Errorf("Failed to export markdown: %v", err)
-		}
-		if _, err := os.Stat(mdPath); os.IsNotExist(err) {
-			t.Error("Markdown file not created")
-		}
-	}
 }

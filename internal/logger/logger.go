@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -187,98 +186,4 @@ func ListSessions(sessionDir string) ([]string, error) {
 func LoadSession(sessionDir, sessionName string) ([]byte, error) {
 	sessionPath := filepath.Join(sessionDir, sessionName)
 	return os.ReadFile(sessionPath)
-}
-
-func ExportSessionToMarkdown(sessionDir, sessionName, outputPath string) error {
-	data, err := LoadSession(sessionDir, sessionName)
-	if err != nil {
-		return err
-	}
-
-	var entries []map[string]any
-	trimmedData := bytes.TrimSpace(data)
-	if len(trimmedData) > 0 && trimmedData[0] == '[' {
-		if err := json.Unmarshal(data, &entries); err != nil {
-			return err
-		}
-	} else {
-		decoder := json.NewDecoder(bytes.NewReader(data))
-		for {
-			var entry map[string]any
-			if err := decoder.Decode(&entry); err == io.EOF {
-				break
-			} else if err != nil {
-				return err
-			}
-			entries = append(entries, entry)
-		}
-	}
-
-	var markdown strings.Builder
-	markdown.WriteString(fmt.Sprintf("# Session Log: %s\n\n", sessionName))
-
-	for _, entry := range entries {
-		typeStr, ok := entry["type"].(string)
-		if !ok {
-			continue
-		}
-
-		dataMap, ok := entry["data"].(map[string]any)
-		if !ok {
-			continue
-		}
-
-		timestampStr, _ := dataMap["timestamp"].(string)
-		requestID, _ := dataMap["request_id"].(string)
-
-		switch typeStr {
-		case "request":
-			method, _ := dataMap["method"].(string)
-			url, _ := dataMap["url"].(string)
-			markdown.WriteString(fmt.Sprintf("## Request %s\n", requestID))
-			markdown.WriteString(fmt.Sprintf("**Time:** %s\n\n", timestampStr))
-			markdown.WriteString(fmt.Sprintf("`%s %s`\n\n", method, url))
-
-			if headers, ok := dataMap["headers"].(map[string]any); ok && len(headers) > 0 {
-				markdown.WriteString("### Headers\n")
-				markdown.WriteString("| Key | Value |\n| --- | --- |\n")
-				for k, v := range headers {
-					markdown.WriteString(fmt.Sprintf("| %s | %s |\n", k, v))
-				}
-				markdown.WriteString("\n")
-			}
-
-			if body, ok := dataMap["body"].(string); ok && body != "" {
-				markdown.WriteString("### Body\n")
-				markdown.WriteString("```\n")
-				markdown.WriteString(body)
-				markdown.WriteString("\n```\n\n")
-			}
-
-		case "response":
-			statusCode, _ := dataMap["status_code"].(float64)
-			markdown.WriteString(fmt.Sprintf("## Response %s\n", requestID))
-			markdown.WriteString(fmt.Sprintf("**Time:** %s\n\n", timestampStr))
-			markdown.WriteString(fmt.Sprintf("**Status:** %d\n\n", int(statusCode)))
-
-			if headers, ok := dataMap["headers"].(map[string]any); ok && len(headers) > 0 {
-				markdown.WriteString("### Headers\n")
-				markdown.WriteString("| Key | Value |\n| --- | --- |\n")
-				for k, v := range headers {
-					markdown.WriteString(fmt.Sprintf("| %s | %s |\n", k, v))
-				}
-				markdown.WriteString("\n")
-			}
-
-			if body, ok := dataMap["body"].(string); ok && body != "" {
-				markdown.WriteString("### Body\n")
-				markdown.WriteString("```\n")
-				markdown.WriteString(body)
-				markdown.WriteString("\n```\n\n")
-			}
-		}
-		markdown.WriteString("---\n\n")
-	}
-
-	return os.WriteFile(outputPath, []byte(markdown.String()), 0644)
 }
