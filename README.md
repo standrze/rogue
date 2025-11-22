@@ -19,7 +19,7 @@ Rogue is a versatile, high-performance HTTP/HTTPS proxy server designed for deep
 - **HTTP/HTTPS Proxy**: Full support for intercepting and inspecting HTTP and HTTPS traffic.
 - **MITM Capabilities**: Automatically generates self-signed certificates to decrypt and inspect HTTPS traffic.
 - **Session Logging**: Logs all requests and responses to JSON files for detailed analysis.
-- **Session Export**: Export session logs to readable Markdown format for easy sharing and reporting.
+
 - **Configurable**: Customize behavior via CLI flags or a `config.json` file.
 - **Traffic Control**: (Coming Soon) Support for request/response modification and replay.
 
@@ -65,21 +65,7 @@ rogue start
 rogue start --port 9090 --max-body-size 524288
 ```
 
-### Exporting Sessions
 
-Rogue logs sessions to the `logs/` directory (or your configured session directory) by default. You can export these JSON logs to a formatted Markdown file.
-
-```bash
-rogue export <session_name> [output_path]
-```
-
-**Example:**
-
-```bash
-rogue export session_20251119_002232.json report.md
-```
-
-If `output_path` is omitted, it defaults to `<session_name>.md`.
 
 ## Configuration
 
